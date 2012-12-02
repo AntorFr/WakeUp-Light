@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<scpd xmlns="urn:schemas-upnp-org:service-1-0">
+  <specVersion>
+    <major>1</major>
+    <minor>0</minor>
+  </specVersion>
+  <serviceStateTable>
+    <stateVariable sendEvents="no">
+      <name>Devices</name>
+      <sendEventsAttribute>no</sendEventsAttribute> 
+      <dataType>string</dataType>
+      <defaultValue></defaultValue>
+    </stateVariable>
+    <stateVariable sendEvents="no">
+      <name>MaxLevel</name>
+      <dataType>ui1</dataType>
+      <defaultValue>0</defaultValue>
+      <allowedValueRange>
+        <minimum>0</minimum>
+        <maximum>100</maximum>
+      </allowedValueRange>
+    </stateVariable>
+    <stateVariable sendEvents="no">
+      <name>RampTimeSecs</name>
+      <dataType>ui4</dataType>
+      <defaultValue>1800</defaultValue>
+    </stateVariable>
+    <stateVariable sendEvents="no">
+      <name>MinInterval</name>
+      <dataType>ui4</dataType>
+      <defaultValue>30</defaultValue>
+    </stateVariable>
+    <stateVariable sendEvents="no">
+      <name>Timers</name>
+      <sendEventsAttribute>no</sendEventsAttribute> 
+      <dataType>string</dataType>
+      <defaultValue></defaultValue>
+    </stateVariable>
+    <stateVariable sendEvents="no">
+      <name>InhibitingDevices</name>
+      <sendEventsAttribute>no</sendEventsAttribute> 
+      <dataType>string</dataType>
+      <defaultValue></defaultValue>
+    </stateVariable>
+  </serviceStateTable>
+  <actionList>
+    <action>
+    <name>SetWakeUpTime</name>
+      <argumentList>
+        <argument>
+          <name>newTimers</name>
+          <direction>in</direction>
+          <relatedStateVariable>Timers</relatedStateVariable>
+        </argument>
+      </argumentList>
+    </action>
+  </actionList>
+</scpd>

@@ -1,0 +1,339 @@
+<?xml version="1.0"?>
+<implementation>
+  <functions>
+-- Ramp up a set of lights over a period of time
+-- 
+-- Author: Antor, based on ZMaF works
+-- Date: 05/28/2012
+--
+--   You can set the following:
+--     devices      : set of device id's controlled by this ramp
+--     Ramp Time Min : time to achieve maxLevel brightness
+--     maxLevel     : level to brighten to (typically 100)
+--     minInterval  : minimal interval in seconds between updates
+--                    to avoid overloading network (set to 30)
+--     inhibitingDevices : if on, the ramp will stop
+      
+-- TODO : luup.call_action("urn:micasaverde-com:serviceId:HomeAutomationGateway1", "Reload", {}, 0) pour recharger lua
+
+
+    local WUL_SID = "urn:antor-fr:serviceId:WakeUpLight1"
+    local SWT_SID = "urn:upnp-org:serviceId:SwitchPower1"
+    local DIM_SID = "urn:upnp-org:serviceId:Dimming1"
+
+	function init(lul_device)
+    log("Starting Wake Up light device " .. tostring(lul_device))
+		local status = luup.variable_get(SWT_SID,"Status", lul_device)
+		if status == nil then
+			luup.variable_set(SWT_SID,"Status",0,lul_device)
+		end
+    
+        -- to initialize the variables
+        local data = readSettings(lul_device)
+        
+        -- Start WakeUp Timer
+        if (data.WakeUpTimers ~= nil and data.WakeUpTimers ~= "") then
+            ConfigWakeUpTimer(lul_device)
+        end
+      
+        luup.call_timer("RestartLua", 2, "03:30:00" ,"1,2,3,4,5,6,7", "")
+
+        return true,"ok","WakeUpLight"
+  end
+      
+  function RestartLua()
+      luup.call_action("urn:micasaverde-com:serviceId:HomeAutomationGateway1", "Reload", {}, 0)
+  end
+
+  function readSettings(lul_device)
+    local data = {}
+    data.devices = toListOfNumbers(readVariableOrInit(lul_device,WUL_SID,"Devices", ""))
+    data.maxLevel = tonumber(readVariableOrInit(lul_device,WUL_SID, "MaxLevel", 100))
+    data.rampTimeSecs = tonumber(readVariableOrInit(lul_device,WUL_SID, "Ramp Time Min", 30)) * 60
+    data.minInterval = tonumber(readVariableOrInit(lul_device,WUL_SID, "MinInterval", 30))
+    --data.WakeUpTime = readVariableOrInit(lul_device,WUL_SID, "Wake Up Time", "")
+    data.WakeUpTimers = readVariableOrInit(lul_device,WUL_SID, "Timers", "")
+
+    data.inhibitingDevices = toListOfNumbers(readVariableOrInit(lul_device,WUL_SID,"InhibitingDevices",""))
+    data.currentBrightness = tonumber(readVariableOrInit(lul_device,DIM_SID,"LoadLevelStatus",0))
+
+    data.interval = math.max(data.rampTimeSecs / data.maxLevel, data.minInterval)
+    data.steps = math.ceil(data.rampTimeSecs / data.interval)
+    data.delta = data.maxLevel / data.steps
+
+    return data
+	end
+
+    function readVariableOrInit(lul_device, devicetype, name, defaultValue) 
+        local var = luup.variable_get(devicetype,name, lul_device)
+        if (var == nil) then
+            var = defaultValue
+            luup.variable_set(devicetype,name,var,lul_device)
+        end
+        return var
+    end
+    
+    function writeVariable(lul_device,devicetype, name, value) 
+        luup.variable_set(devicetype,name,value,lul_device)
+    end
+    
+
+
+    function fromListOfNumbers(t)
+        return table.concat(t, ",")
+    end
+
+    function toListOfNumbers(s) 
+        t = {}
+        for v in string.gmatch(s, "(-?[0-9]+)") do
+            table.insert(t, tonumber(v))
+        end
+        return t
+    end
+  
+    function SubTime(Time,Sec)
+    
+        local pattern = "([+-]?)(%d+):(%d+):(%d+)([RT]?)"
+        local rsigne, rhour, rmin, rsec, rtype = Time:match(pattern)
+        local newTime
+    
+        if (rtype == nil or rtype == "") then
+            local dr = os.date("*t", 0) -- Referece date
+            local newSec = os.time({year=dr.year, month=dr.month, day=dr.day, hour=rhour, min=rmin, sec=rsec}) - tonumber(Sec)
+            local date = os.date("*t", newSec)
+            newTime = date.hour .. ":" .. date.min .. ":" .. date.sec
+        else            
+            newTime = tonumber(rsigne..rhour)*3600 + tonumber(rmin)*60 + tonumber(rsec)  - tonumber(Sec)
+            if (newTime &lt; 0) then
+                rsigne = "-"
+            elseif (newTime == 0) then
+                rsigne = ""
+            else
+                rsigne = "+"
+            end
+            
+            newTime = math.abs(newTime)      
+            rhour = math.floor(newTime / 3600)
+            rmin = math.floor((newTime % 3600)/ 60 )
+            rsec = (newTime % 3600) % 60
+            
+            newTime = rsigne .. rhour ..':'.. rmin ..':'.. rsec .. rtype
+        end
+        return newTime
+    end
+    
+    
+    function SubDate(Time,Sec)
+        local newTime
+        local pattern = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)"
+        local runyear, runmonth, runday, runhour, runminute, runseconds = Time:match(pattern)
+        
+        local convertedTimestamp = os.time({year = runyear, month = runmonth, day = runday, hour = runhour, min = runminute, sec = runseconds})  - tonumber(Sec)
+        local newDate = os.date("*t", convertedTimestamp)
+        if (os.date("%c", convertedTimestamp) ~= os.date("%c", convertedTimestamp-1)) then -- No probleme with single-precision floats so proced (Vera 3 or VeraLite)
+            newTime = newDate.year .. "-" .. newDate.month .. "-" .. newDate.day .. " " .. newDate.hour .. ":" .. newDate.min .. ":" .. newDate.sec
+        else -- Vera 2
+             newTime = newDate.year .. "-" .. newDate.month .. "-" .. newDate.day .. " " .. SubTime(runhour .. ":" .. runminute .. ":" .. runseconds,Sec)
+        end
+        return newTime
+    end
+  
+    function split(str, pat)
+        local t = {}  -- NOTE: use {n = 0} in Lua-5.0
+        local fpat = "(.-)" .. pat
+        local last_end = 1
+        local s, e, cap = str:find(fpat, 1)
+        while s do
+          if s ~= 1 or cap ~= "" then
+         table.insert(t,cap)
+          end
+          last_end = e+1
+          s, e, cap = str:find(fpat, last_end)
+        end
+        if last_end &lt;= #str then
+          cap = str:sub(last_end)
+          table.insert(t, cap)
+        end
+        return t
+    end
+  
+    function parseTimer(sTimers,data)
+        -- timerID; enabled; name;type; time; days; duration|
+        local Timers = {}
+        
+        local aTimers = split(sTimers,"|")
+        
+        -- for each timer
+        for i = 1, #aTimers, 1 do
+            local sTimer = aTimers[i]
+            local aTimer = split(sTimer,";")
+            if (#aTimer == 7) then
+                local time = {}
+                time.id = tonumber(aTimer[1])
+                time.enabled = tonumber(aTimer[2])
+                time.name = aTimer[3]
+                time.type = tonumber(aTimer[4])
+                time.time = aTimer[5]
+                time.days = aTimer[6]
+                time.duration = aTimer[7] * 60
+                
+                Timers[i]=time
+                --log('timer parsed')
+            else
+                log('error timer ID ' .. aTimer[1] .. ' wrong format')
+            end
+        
+        end
+        
+        return Timers
+    
+    end
+    
+    function GetTimerById(Timers,id)
+        for i=1, #Timers, 1 do
+            if(Timers[i].id == id ) then
+                return Timers[i]
+            end
+        end
+        return nil
+    end
+    
+    function ConfigWakeUpTimer(lul_device)
+    
+        local data = readSettings(lul_device)
+        local timers = parseTimer(data.WakeUpTimers,data)
+        for i = 1, #timers, 1 do
+            if (timers[i].enabled == 1) then
+                if (timers[i].type == 2 or timers[i].type == 3) then
+                    timers[i].time = SubTime(timers[i].time,timers[i].duration)
+                elseif (timers[i].type == 4) then
+                    timers[i].time = SubDate(timers[i].time,timers[i].duration)
+                end
+                
+                luup.call_timer("WakeUp", timers[i].type , timers[i].time, timers[i].days, tostring(lul_device) .. "," .. tostring(timers[i].id))   
+                log("Timer " .. timers[i].name .. " enable at " .. timers[i].time) 
+            end
+        
+        end
+
+    end
+    
+    function WakeUp(Datas)
+        local datas = split(Datas, ",")
+        local lul_device = tonumber(datas[1])
+        local timerId = tonumber(datas[2])
+        
+        log("wake up light WakeUp Hook called")
+        
+        
+        local wakeupOn, lastSet = luup.variable_get(SWT_SID, "Status", lul_device)
+        if (wakeupOn == "1") then
+            return -- end here (allready started by previus event)
+        
+        else
+            -- initialize min Status
+            luup.variable_set(SWT_SID,"Status", 1,lul_device)
+            -- initialize min brightness
+            writeVariable(lul_device, DIM_SID, "LoadLevelStatus", 0)
+
+            luup.call_timer("SlowlyDimOn", 1 , 1, "", Datas)
+        end
+    end
+
+  function SlowlyDimOn(lul_dataDevice)
+    local datas = split(lul_dataDevice, ",")
+    local lul_device = tonumber(datas[1])
+
+   -- check if wakeup device is still on, otherwise quit
+   local wakeupOn, lastSet = luup.variable_get(SWT_SID, "Status", lul_device)
+   if (wakeupOn == "0") then
+     return -- end here
+   end
+   
+   local data = readSettings(lul_device)
+   
+    -- Hooked by timer
+    if (#datas == 2) then
+        local timerId = tonumber(datas[2])
+        local timers = parseTimer(data.WakeUpTimers,data)
+        local timer = GetTimerById(timers,timerId)
+        
+        data.interval = math.max(timer.duration / data.maxLevel, data.minInterval)
+        data.steps = math.ceil(timer.duration / data.interval)
+        data.delta = data.maxLevel / data.steps
+    end
+
+   -- check here to see if any inhibiting devices are on and stop
+   for index = 1, #data.inhibitingDevices, 1 do 
+     local device = data.inhibitingDevices[index]
+     local invert = false
+     if (0 > device) then
+        device = 0 - device
+        invert = true
+     end
+
+     local inhibitor, lastSet = luup.variable_get(SWT_SID, "Status", device)
+
+     if (inhibitor == (invert and "0" or "1")) then
+       -- turn off wakeup
+       luup.variable_set(SWT_SID,"Status",0,lul_device)
+       writeVariable(lul_device, DIM_SID, "LoadLevelStatus", 0)
+       return
+     end
+   end
+   
+   -- now increase the light level
+   local oldDimLevel = data.currentBrightness
+   local newDimLevel = math.min(math.ceil(oldDimLevel + data.delta), 100)
+   writeVariable(lul_device, DIM_SID, "LoadLevelStatus", newDimLevel)
+   for index = 1, #data.devices, 1 do 
+     local device = data.devices[index]
+     if (device) then
+       -- leave it alone if user changed it 
+        local currentLevel,timeOfCurrentLevel = luup.variable_get(DIM_SID, "LoadLevelTarget", device)
+        local currentStatus,timeOfCurrentLevel = luup.variable_get(SWT_SID, "Status", device)
+
+        if oldDimLevel == 0 or (tonumber(currentLevel) == oldDimLevel and (tonumber(currentStatus) ~= 0 or oldDimLevel &lt; 2)) then 
+            luup.call_action(DIM_SID, "SetLoadLevelTarget", { newLoadlevelTarget=newDimLevel }, device)
+        end
+     end
+   end
+   if (newDimLevel &lt; data.maxLevel) then
+     luup.call_timer("SlowlyDimOn", 1 , data.interval, "", lul_dataDevice)
+   else
+     -- turn off wakeup
+     luup.variable_set(SWT_SID,"Status",0,lul_device)
+     writeVariable(lul_device, DIM_SID, "LoadLevelStatus", 0)
+   end
+  end
+
+  function log(msg) 
+    luup.log("Wake Up Light: " .. msg)
+  end
+  </functions>
+  <startup>init</startup>
+  <actionList>
+    <action>
+        <serviceId>urn:upnp-org:serviceId:SwitchPower1</serviceId>
+        <name>SetTarget</name>
+        <job>
+            log("wake up light SetTarget called")
+            luup.variable_set(SWT_SID,"Status", lul_settings.newTargetValue,lul_device)
+            -- initialize min brightness
+            writeVariable(lul_device, DIM_SID, "LoadLevelStatus", 0)
+            if (lul_settings.newTargetValue == "1") then
+                luup.call_timer("SlowlyDimOn", 1 , 1, "", tostring(lul_device))
+            end
+            return 4,5
+        </job>
+    </action>
+    <action>
+        <serviceId>urn:antor-fr:serviceId:WakeUpLight1</serviceId>
+        <name>SetWakeUpTime</name>
+        <run>
+            log("SetWakeUpTime called")
+            return 4,5
+        </run>
+    </action>
+  </actionList>
+</implementation>

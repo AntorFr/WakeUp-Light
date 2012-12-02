@@ -1,0 +1,303 @@
+{
+    "flashicon": "http://mios.antor.fr/Icons/WakUp_Light.png",
+    "imgIconTurnable": "",
+    "imgIconMin": "http://mios.antor.fr/Icons/WakUp_Light_0.png",
+    "imgIconMax": "http://mios.antor.fr/Icons/WakUp_Light_100.png",
+    "halloIconsDir": "pics/hallo",
+    "state_icons":[
+		"WakUp_Light_0.png",
+        "WakUp_Light_25.png",
+        "WakUp_Light_50.png",
+        "WakUp_Light_75.png",
+		"WakUp_Light_100.png"
+	],
+    "x": "2",
+    "y": "4",
+    "iconText": "1",
+    "inScene": "1",
+    "DisplayStatus": {
+        "Service": "urn:upnp-org:serviceId:Dimming1",
+        "Variable": "LoadLevelStatus",
+        "MinValue": "0",
+        "MaxValue": "100"
+    },
+    "doc_url": {
+        "doc_language": 1,
+        "doc_manual": 1,
+        "doc_version": 1,
+        "doc_platform": 0,
+        "doc_page": "lighting_devices"
+    },
+    "ToggleButton": 1,
+    "Tabs": [
+        {
+            "Label": {
+                "lang_tag": "tabname_control",
+                "text": "Control"
+            },
+            "Position": "0",
+            "TabType": "flash",
+            "ControlGroup": [
+                {
+                    "id": "1",
+                    "isSingle": "1",
+                    "scenegroup": "1"
+                },
+                {
+                    "id": "2",
+                    "isSingle": "1",
+                    "scenegroup": "1"
+                },
+                {
+                    "id": "3",
+                    "isSingle": "1",
+                    "scenegroup": "1"
+                }
+            ],
+            "SceneGroup": [
+                {
+                    "id": "1",
+                    "top": "0.5",
+                    "left": "0",
+                    "x": "2",
+                    "y": "2.5"
+                }
+            ],
+            "Control": [
+                {
+                    "ControlGroup": "3",
+                    "ControlType": "slider",
+                    "top": "0",
+                    "left": "0",
+                    "Label": {
+                        "lang_tag": "cmd_on",
+                        "text": "On"
+                    },
+                    "Display": {
+                        "Service": "urn:upnp-org:serviceId:Dimming1",
+                        "Variable": "LoadLevelStatus",
+                        "MinValue": "0",
+                        "MaxValue": "100",
+                        "Top": 50,
+                        "Left": 200,
+                        "Width": 100,
+                        "Height": 25,
+                        "ID": "newLoadlevelTarget"
+                    }
+                },
+                {
+                    "ControlGroup": "1",
+                    "ControlType": "button",
+                    "top": "1.5",
+                    "left": "0",
+                    "Label": {
+                        "lang_tag": "cmd_off",
+                        "text": "Sleep"
+                    },
+                    "Display": {
+                        "Service": "urn:upnp-org:serviceId:SwitchPower1",
+                        "Variable": "Status",
+                        "Value": "0",
+                        "Top": 50,
+                        "Left": 50,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:upnp-org:serviceId:SwitchPower1",
+                        "Action": "SetTarget",
+                        "Parameters": [
+                            {
+                                "Name": "newTargetValue",
+                                "Value": "0"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "ControlGroup": "2",
+                    "ControlType": "button",
+                    "top": "1.5",
+                    "left": "1",
+                    "Label": {
+                        "lang_tag": "cmd_on",
+                        "text": "Wake Up"
+                    },
+                    "Display": {
+                        "Service": "urn:upnp-org:serviceId:SwitchPower1",
+                        "Variable": "Status",
+                        "Value": "1",
+                        "Top": 50,
+                        "Left": 450,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:upnp-org:serviceId:SwitchPower1",
+                        "Action": "SetTarget",
+                        "Parameters": [
+                            {
+                                "Name": "newTargetValue",
+                                "Value": "1"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },        
+        {
+            "Label": {
+                "lang_tag": "Timers",
+                "text": "Timers"
+            },
+            "Position": "1",
+            "TabType": "javascript",
+            "ScriptName": "J_WakeUpLight.js",
+            "Function": "WUL_timers"
+        },
+        {
+            "Label": {
+                "lang_tag": "settings",
+                "text": "Settings"
+            },
+            "Position": "2",
+            "TabType": "javascript",
+            "ScriptName": "shared.js",
+            "Function": "simple_device"
+        },
+        {
+            "Label": {
+                "lang_tag": "advanced",
+                "text": "Advanced"
+            },
+            "Position": "3",
+            "TabType": "javascript",
+            "ScriptName": "shared.js",
+            "Function": "advanced_device"
+        },
+        {
+            "Label": {
+                "lang_tag": "device_options",
+                "text": "Device Options"
+            },
+            "Position": "4",
+            "TabType": "javascript",
+            "ScriptName": "shared.js",
+            "Function": "device_zwave_options"
+        },
+        {
+            "Label": {
+                "lang_tag": "logs",
+                "text": "Logs"
+            },
+            "Position": "5",
+            "TabType": "javascript",
+            "ScriptName": "shared.js",
+            "Function": "device_logs"
+        },
+        {
+            "Label": {
+                "lang_tag": "notifications",
+                "text": "Notifications"
+            },
+            "Position": "6",
+            "TabType": "javascript",
+            "ScriptName": "shared.js",
+            "Function": "device_notifications"
+        }
+    ],
+    "sceneList": {
+        "group_1": {
+            "cmd_1": {
+                "label": "ON",
+                "serviceId": "urn:upnp-org:serviceId:Dimming1",
+                "action": "SetLoadLevelTarget",
+                "arguments": {
+                    "newLoadlevelTarget": "100"
+                },
+                "display": {
+                    "service": "urn:upnp-org:serviceId:Dimming1",
+                    "variable": "LoadLevelStatus",
+                    "value": "100"
+                }
+            },
+            "cmd_2": {
+                "label": "OFF",
+                "serviceId": "urn:upnp-org:serviceId:Dimming1",
+                "action": "SetLoadLevelTarget",
+                "arguments": {
+                    "newLoadlevelTarget": "0"
+                },
+                "display": {
+                    "service": "urn:upnp-org:serviceId:Dimming1",
+                    "variable": "LoadLevelStatus",
+                    "value": "0"
+                }
+            },
+            "cmd_3": {
+                "label": "Set level",
+                "serviceId": "urn:upnp-org:serviceId:Dimming1",
+                "action": "SetLoadLevelTarget",
+                "argumentList": {
+                    "argument_1": {
+                        "dataType": "ui1",
+                        "defaultValue": "",
+                        "allowedValueRange": {
+                            "minimum": "0",
+                            "maximum": "100"
+                        },
+                        "prefix": "to",
+                        "suffix": "%",
+                        "name": "newLoadlevelTarget"
+                    }
+                },
+                "display": {
+                    "service": "urn:upnp-org:serviceId:Dimming1",
+                    "variable": "LoadLevelStatus"
+                }
+            }
+        }
+    },
+    "eventList2": [
+        {
+            "id": 1,
+            "label": {
+                "lang_tag": "a_device_is_turned_on_off",
+                "text": "A device is turned on or off"
+            },
+            "serviceId": "urn:upnp-org:serviceId:SwitchPower1",
+            "argumentList": [
+                {
+                    "id": 1,
+                    "dataType": "boolean",
+                    "defaultValue": "1",
+                    "allowedValueList": [
+                        {
+                            "Off": "0",
+                            "HumanFriendlyText": {
+                                "lang_tag": "hft_device_turned_off",
+                                "text": "_DEVICE_NAME_ is turned off"
+                            }
+                        },
+                        {
+                            "On": "1",
+                            "HumanFriendlyText": {
+                                "lang_tag": "hft_device_turned_on",
+                                "text": "_DEVICE_NAME_ is turned on"
+                            }
+                        }
+                    ],
+                    "name": "Status",
+                    "comparisson": "=",
+                    "prefix": {
+                        "lang_tag": "which_mode",
+                        "text": "Which mode"
+                    },
+                    "suffix": {}
+                }
+            ]
+        }
+    ],
+    "DeviceType": "urn:antor-fr:device:WakeUpLight:1",
+    "device_type": "urn:antor-fr:device:WakeUpLight:1"
+}
