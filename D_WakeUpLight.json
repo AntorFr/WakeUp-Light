@@ -52,12 +52,17 @@
                     "id": "3",
                     "isSingle": "1",
                     "scenegroup": "1"
+                },
+                {
+                    "id": "4",
+                    "isSingle": "1",
+                    "scenegroup": "1"
                 }
             ],
             "SceneGroup": [
                 {
                     "id": "1",
-                    "top": "0.5",
+                    "top": "0",
                     "left": "0",
                     "x": "2",
                     "y": "2.5"
@@ -142,6 +147,25 @@
                             }
                         ]
                     }
+                },
+                {
+                    "ControlGroup": "4",
+                    "ControlType": "js_button",
+                    "top": "3",
+                    "left": "0.5",
+                    "Label": {
+                        "lang_tag": "btn_timers",
+                        "text": "Timers"
+                    },
+                    "Display": {
+                        "Value": "1",
+                        "Top": 100,
+                        "Left": 225,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Function": "show_device_popup",
+		    "no_control_panel":"1"
                 }
             ]
         },        

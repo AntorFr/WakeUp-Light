@@ -509,6 +509,15 @@ function WUL_event_time_picker(prefix,dayOfMonthTime,deviceID,timerID){
 	return html;	
 }
 
+function WUL_timers_device(deviceID){
+    var def = jsonp.get_device_definition(deviceID);
+    if(def!="undefined"){
+        cpanel.open("device",def.device_type,deviceID,1);
+    }else{
+        return false;
+    }
+}
+
 function WUL_timers(deviceID){
 	try{
 		var timersObj = get_timer_obj(deviceID);
@@ -539,7 +548,7 @@ function WUL_timers(deviceID){
                             }
                         }
                         timerTime += ' ('+description+')';*/
-                         timerTime += ' ('+timersObj[i].days_of_week+')';
+                        timerTime += ' ('+timersObj[i].days_of_week+')';
                     break;
                     case 3:
                         timerType= 'Day of month';
