@@ -37,6 +37,12 @@
         end
       
         luup.call_timer("RestartLua", 2, "03:30:00" ,"1,2,3,4,5,6,7", "")
+      
+        -- check if wakeup device is on, restart ramp.
+        local wakeupOn, lastSet = luup.variable_get(SWT_SID, "Status", lul_device)
+        if (wakeupOn == "1") then
+            luup.call_timer("SlowlyDimOn", 1 , 1, "", tostring(lul_device))
+        end
 
         return true,"ok","WakeUpLight"
   end
@@ -290,7 +296,7 @@
      local device = data.devices[index]
      if (device) then
        -- leave it alone if user changed it 
-        local currentLevel,timeOfCurrentLevel = luup.variable_get(DIM_SID, "LoadLevelTarget", device)
+        local currentLevel,timeOfCurrentLevel = luup.variable_get(DIM_SID, "LoadLevelStatus", device)
         local currentStatus,timeOfCurrentLevel = luup.variable_get(SWT_SID, "Status", device)
 
         if oldDimLevel == 0 or (tonumber(currentLevel) == oldDimLevel and (tonumber(currentStatus) ~= 0 or oldDimLevel &lt; 2)) then 
