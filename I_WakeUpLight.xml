@@ -65,10 +65,10 @@
 
     data.interval = math.max(data.rampTimeSecs / data.maxLevel, data.minInterval)
     data.steps = math.ceil(data.rampTimeSecs / data.interval)
-    data.delta = data.maxLevel / data.steps
+    data.delta = math.ceil(data.maxLevel / data.steps)
 
     return data
-	end
+  end
 
     function readVariableOrInit(lul_device, devicetype, name, defaultValue) 
         local var = luup.variable_get(devicetype,name, lul_device)
@@ -266,7 +266,7 @@
         
         data.interval = math.max(timer.duration / data.maxLevel, data.minInterval)
         data.steps = math.ceil(timer.duration / data.interval)
-        data.delta = data.maxLevel / data.steps
+        data.delta = math.ceil(data.maxLevel / data.steps)
     end
 
    -- check here to see if any inhibiting devices are on and stop
@@ -296,10 +296,11 @@
      local device = data.devices[index]
      if (device) then
        -- leave it alone if user changed it 
-        local currentLevel,timeOfCurrentLevel = luup.variable_get(DIM_SID, "LoadLevelStatus", device)
+        local currentLevelStatus,timeOfCurrentLevel = luup.variable_get(DIM_SID, "LoadLevelStatus", device)
+        local currentLevelTarget,timeOfCurrentLevel = luup.variable_get(DIM_SID, "LoadLevelTarget", device)
         local currentStatus,timeOfCurrentLevel = luup.variable_get(SWT_SID, "Status", device)
 
-        if oldDimLevel == 0 or (tonumber(currentLevel) == oldDimLevel and (tonumber(currentStatus) ~= 0 or oldDimLevel &lt; 2)) then 
+        if oldDimLevel == 0 or ((tonumber(currentLevelStatus) == oldDimLevel or tonumber(currentLevelTarget) == oldDimLevel ) and (tonumber(currentStatus) ~= 0 or oldDimLevel &lt; 2)) then
             luup.call_action(DIM_SID, "SetLoadLevelTarget", { newLoadlevelTarget=newDimLevel }, device)
         end
      end

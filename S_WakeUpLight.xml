@@ -32,6 +32,7 @@
     </stateVariable>
     <stateVariable sendEvents="no">
       <name>Timers</name>
+      <shortCode>Timers</shortCode>
       <sendEventsAttribute>no</sendEventsAttribute> 
       <dataType>string</dataType>
       <defaultValue></defaultValue>
